@@ -3,8 +3,21 @@
 #include <math.h>
 
 #include <iostream>
+#include <string>
 
-int main(int argc, char **argv) {
+
+int arraySize(char* message) {
+    int size = 0;
+
+    while(message[size] != '\0') {
+        std::cout<<message[size];
+        size++;
+    }
+
+    return size;
+}
+
+int SHA256(char* message) {
     //Init
     uint32_t h0 = 0x6a09e667;
     uint32_t h1 = 0xbb67ae85;
@@ -26,6 +39,18 @@ int main(int argc, char **argv) {
         0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
     };
 
-    //std::cout<<k[0];
+    //std::cout<<sizeof(&message[0]);
+    //std::cout<<sizeof(message[2]);
+    uint32_t messageBits = arraySize(message)*8;
+    std::cout<<messageBits;
 
+    return 0;
+}  
+
+int main(int argc, char **argv) {
+
+    char message[] = "1asd";
+    SHA256(message);
+
+    return 0;
 }
