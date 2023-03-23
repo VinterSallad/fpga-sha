@@ -366,7 +366,7 @@ int main(int argc, char **argv)
 
     //uint8_t *input = (uint8_t)"fishes";
 
-    size_t inputLength = sizeof(&input)/sizeof(input[0]);
+    size_t inputLength = sizeof(input)/sizeof(input[0]);
 
     sha256(hash, input, inputLength);
 
