@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 
 //Returnera 32 bitars värde som blivit kombinerad från 4 8 bitars värden.
 static uint32_t load_bigendian_32(const uint8_t *x) {
@@ -359,11 +360,14 @@ int main(int argc, char const *argv[])
     uint8_t hash[32];
 
     uint8_t input[] = {
-        'f', 'i', 's', 'h'
+        'f', 'i', 's', 'h', 'e', 's'
     };
 
+    //uint8_t *input = (uint8_t)atoi(*argv);
+
     //Size should be in BYTEs
-    size_t inputLength = 4;
+    //size_t inputLength = 6;
+    size_t inputLength = sizeof(input)/sizeof(input[0]);
 
     sha256(hash, input, inputLength);
 
