@@ -5,16 +5,75 @@
 #include <iostream>
 #include <string>
 
-
-int arraySize(char* message) {
+int arrayBitSize(char* message) {
     int size = 0;
 
     while(message[size] != '\0') {
-        std::cout<<message[size];
+        //std::cout<<message[size];
         size++;
     }
 
-    return size;
+    return size*8;    
+}
+
+int findSmallestMultiple512(int messageBits) {
+    int n = 0;
+    //Find multiple n
+    while(messageBits > 512) {
+        messageBits -= 512;
+        n++;
+    }
+    
+    //Account for required padding space
+    if(messageBits > (512-64-8)) {
+        n += 2;
+    } else {
+        n++;
+    }
+
+    return n;
+}
+
+uint32_t[] createPaddedMessage(char *message, int messageBits) {
+    int n = findSmallestMultiple512(messageBits);
+
+    int paddedMessageSize = n*(512/32);
+    //16 words per 512 bit chunk
+    uint32_t paddedMessage[paddedMessageSize];
+    
+    for(int i = 0; i < paddedMessageSize; i++) {
+        uint8_t buf[4];
+
+        for(int j = 0; j < 4; j++) {
+            if(message == '\0') {
+
+                //Fill out the rest of the buffer
+                if(j < 4) {
+                    buf[j] = 0x80;
+                    j++;
+                }
+                while(j < 4) {
+                    buf[j] = 0x00;
+                    j++;
+                }
+
+                break;
+            }
+
+            buf[j] = (uint8_t)message;
+            message++;
+        }
+
+    }
+
+    message[startingIndex] = 'a';
+    if(message[startingIndex] == '\0') {
+        std::cout<<message;
+    }
+    
+    for(int i = 1; i < paddingBitsArea-(64/8); i++) {
+
+    }
 }
 
 int SHA256(char* message) {
@@ -41,15 +100,18 @@ int SHA256(char* message) {
 
     //std::cout<<sizeof(&message[0]);
     //std::cout<<sizeof(message[2]);
-    uint32_t messageBits = arraySize(message)*8;
-    std::cout<<messageBits;
+    uint32_t messageBits = arrayBitSize(message);
+    //std::cout<<messageBits;
+    padMessage(message, messageBits);
+    
+    
 
     return 0;
 }  
 
 int main(int argc, char **argv) {
 
-    char message[] = "1asd";
+    char message[] = "1";
     SHA256(message);
 
     return 0;
