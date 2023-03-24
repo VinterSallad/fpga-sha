@@ -8,11 +8,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "fips202.h"
-
+//Antal rundor som sker vid varje f där 5 grekiska funktioner exekveras per runda
 #define NROUNDS 24
+
+//Rotate Left a med offset
 #define ROL(a, offset) (((a) << (offset)) ^ ((a) >> (64 - (offset))))
 
+//Skapa en 64 bitars integer från 8 bitars integer
 /*************************************************
  * Name:        load64
  *
@@ -31,6 +33,7 @@ static uint64_t load64(const uint8_t *x) {
     return r;
 }
 
+//Skapa 8 bitars integer från 64 bitars integer
 /*************************************************
  * Name:        store64
  *
@@ -45,6 +48,7 @@ static void store64(uint8_t *x, uint64_t u) {
     }
 }
 
+//24 konstanter för de 24 rundor
 /* Keccak round constants */
 static const uint64_t KeccakF_RoundConstants[NROUNDS] = {
     0x0000000000000001ULL, 0x0000000000008082ULL,
@@ -61,6 +65,7 @@ static const uint64_t KeccakF_RoundConstants[NROUNDS] = {
     0x0000000080000001ULL, 0x8000000080008008ULL
 };
 
+//Permuterar/Mutera rektangelns state (1600-bitar), dvs. exekvera de 24 rundor på rektangeln
 /*************************************************
  * Name:        KeccakF1600_StatePermute
  *
@@ -71,19 +76,31 @@ static const uint64_t KeccakF_RoundConstants[NROUNDS] = {
 static void KeccakF1600_StatePermute(uint64_t *state) {
     int round;
 
+    //Naming convention, a,e,i,o,u är vänster till höger, b,g,k,m,s är uppåt till neråt, 
+    //var varsam att Aba är mitten av rektangeln på grund av hur indexering av rektangeln ser ut. Tänk på tabellen i rapporten och hur det korresponderar till state[i]
+    //Bra att veta, designen allmänt nedan är att exekvera alla t.ex. XOR samtidigt, så var beredd att tänka på den stora bilden snarare än beräkningen för en singulär bit på rektangeln
+
+    //64 bitars lanes i rektangeln
     uint64_t Aba, Abe, Abi, Abo, Abu;
     uint64_t Aga, Age, Agi, Ago, Agu;
     uint64_t Aka, Ake, Aki, Ako, Aku;
     uint64_t Ama, Ame, Ami, Amo, Amu;
     uint64_t Asa, Ase, Asi, Aso, Asu;
+
+    //Temporära variabler
+
+    //Temporära variabler för raden man arbetar på
     uint64_t BCa, BCe, BCi, BCo, BCu;
+    //Theta, där man sparar 2 kolumners XOR med varandra
     uint64_t Da, De, Di, Do, Du;
+
     uint64_t Eba, Ebe, Ebi, Ebo, Ebu;
     uint64_t Ega, Ege, Egi, Ego, Egu;
     uint64_t Eka, Eke, Eki, Eko, Eku;
     uint64_t Ema, Eme, Emi, Emo, Emu;
     uint64_t Esa, Ese, Esi, Eso, Esu;
 
+    //Ladda in rektangeln
     // copyFromState(A, state)
     Aba = state[0];
     Abe = state[1];
@@ -111,8 +128,10 @@ static void KeccakF1600_StatePermute(uint64_t *state) {
     Aso = state[23];
     Asu = state[24];
 
+    //Exekvera alla 24 rundor, dvs de grekiska funktionerna, loop unfoldad så att 2 rundor exekveras per iteratiion
     for (round = 0; round < NROUNDS; round += 2) {
         //    prepareTheta
+        //Räkna ut alla vertikala kolumners XOR, BCa första biten kan tänkas vara paritet av kolumnen till vänster längst fram i rektangeln osv.
         BCa = Aba ^ Aga ^ Aka ^ Ama ^ Asa;
         BCe = Abe ^ Age ^ Ake ^ Ame ^ Ase;
         BCi = Abi ^ Agi ^ Aki ^ Ami ^ Asi;
@@ -120,29 +139,49 @@ static void KeccakF1600_StatePermute(uint64_t *state) {
         BCu = Abu ^ Agu ^ Aku ^ Amu ^ Asu;
 
         // thetaRhoPiChiIotaPrepareTheta(round  , A, E)
+
+        //theta funktionen, "Di" andra biten är då kolumnen till vänster XOR med kolumnen till höger 1 steg inåt, (tänk illustrationen för theta)
         Da = BCu ^ ROL(BCe, 1);
         De = BCa ^ ROL(BCi, 1);
         Di = BCe ^ ROL(BCo, 1);
         Do = BCi ^ ROL(BCu, 1);
         Du = BCo ^ ROL(BCa, 1);
 
+        //Samtliga funktioner exekveras samtidigt
+        //Designen är att man beräknar det som krävs för att ta fram hela raden för nästa state innan man går till nästa rad.
+
+        //Mittersta raden
+
+        //Applicera theta (gäller samtliga ^= Dx)
         Aba ^= Da;
+
+        //Spara till temporär variabel (special fall då Aba är mittersta lanen)
         BCa = Aba;
+
+        //Theta, pi (lanes flyttas) sker implicit också här då man väljer att arbeta på lanen som kommer flyttas till raden man arbetar på, tänk figuren för pi
         Age ^= De;
+
+        //rho (Gäller samtliga ROL), andra steg där man roterar lanen, lägg märke till att om en lane inte använder sig av ROL så betyder det att den roteras med 0.
         BCe = ROL(Age, 44);
+
         Aki ^= Di;
         BCi = ROL(Aki, 43);
         Amo ^= Do;
         BCo = ROL(Amo, 21);
         Asu ^= Du;
         BCu = ROL(Asu, 14);
+
+        //Börja assigna nästa states rad, "Eyx" är nästa state på rad y.
+        //Chi, näst sista steget där man tar och XOR:ar med 2 bitar till höger (mod 5)
         Eba = BCa ^ ((~BCe) & BCi);
+        //iota, sista steget där man XOR centrala lanen med round constant, lägg märke till att övriga rader inte har denna beräkning
         Eba ^= KeccakF_RoundConstants[round];
         Ebe = BCe ^ ((~BCi) & BCo);
         Ebi = BCi ^ ((~BCo) & BCu);
         Ebo = BCo ^ ((~BCu) & BCa);
         Ebu = BCu ^ ((~BCa) & BCe);
 
+        //Nästa rad samma sak
         Abo ^= Do;
         BCa = ROL(Abo, 28);
         Agu ^= Du;
@@ -158,6 +197,33 @@ static void KeccakF1600_StatePermute(uint64_t *state) {
         Egi = BCi ^ ((~BCo) & BCu);
         Ego = BCo ^ ((~BCu) & BCa);
         Egu = BCu ^ ((~BCa) & BCe);
+
+        //Skrivet om så att det logiskt makear mer sense
+        //För varje rad på rektangeln
+        /*
+            //Applicera theta som förberäknats ovan samtidigt som pi sker
+            Abo ^= Do;
+            Agu ^= Du;
+            Aka ^= Da;
+            Ame ^= De;
+            Asi ^= Di;
+
+            //Applicera rho
+            BCa = ROL(Abo, 28);
+            BCe = ROL(Agu, 20);
+            BCi = ROL(Aka, 3);
+            BCo = ROL(Ame, 45);
+            BCu = ROL(Asi, 61);
+
+            //Applicera chi
+            Ega = BCa ^ ((~BCe) & BCi);
+            Ege = BCe ^ ((~BCi) & BCo);
+            Egi = BCi ^ ((~BCo) & BCu);
+            Ego = BCo ^ ((~BCu) & BCa);
+            Egu = BCu ^ ((~BCa) & BCe);
+
+            //Applicera iota bara om det är mittersta raden
+        */
 
         Abe ^= De;
         BCa = ROL(Abe, 1);
@@ -206,6 +272,9 @@ static void KeccakF1600_StatePermute(uint64_t *state) {
         Esi = BCi ^ ((~BCo) & BCu);
         Eso = BCo ^ ((~BCu) & BCa);
         Esu = BCu ^ ((~BCa) & BCe);
+
+
+        //Samma som ovan men nästa iteration nu när "Eyx" är en muterad state av "Ayx", kommer mutera "Ayx" baserad på "Eyx" vilket förs över till nästa iteration...
 
         //    prepareTheta
         BCa = Eba ^ Ega ^ Eka ^ Ema ^ Esa;
@@ -303,6 +372,7 @@ static void KeccakF1600_StatePermute(uint64_t *state) {
         Asu = BCu ^ ((~BCa) & BCe);
     }
 
+    //Spara nu permuterade rektangeln
     // copyToState(state, A)
     state[0] = Aba;
     state[1] = Abe;
@@ -330,6 +400,7 @@ static void KeccakF1600_StatePermute(uint64_t *state) {
     state[23] = Aso;
     state[24] = Asu;
 }
+
 
 /*************************************************
  * Name:        keccak_absorb
