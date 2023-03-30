@@ -1,0 +1,6 @@
+common/inc/AOCLUtils/aocl_utils.h
+common/inc/AOCLUtils/opencl.h
+common/inc/AOCLUtils/options.h
+common/inc/AOCLUtils/scoped_ptrs.h
+common/src/AOCLUtils/opencl.cpp
+common/src/AOCLUtils/options.cpp

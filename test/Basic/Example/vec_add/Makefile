@@ -1,0 +1,2 @@
+all:
+	aoc -v -march=emulator vec_add.cl -o vec_add.aocx -report
