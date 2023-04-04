@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include <stdio.h>
+#include <iostream>
 
 //Antal rundor som sker vid varje f där 5 grekiska funktioner exekveras per runda
 #define NROUNDS 24
@@ -567,6 +568,7 @@ void shake256(uint8_t *output, size_t outlen,
         shake256_squeezeblocks(t, 1, s);
         for (size_t i = 0; i < outlen; ++i) {
             output[i] = t[i];
+            
         }
     }
 }
