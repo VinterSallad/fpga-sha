@@ -26,3 +26,6 @@
 *.a
 *.lib
 
+
+# Extra
+*.vscode
