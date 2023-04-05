@@ -11,6 +11,14 @@
 #include <stdio.h>
 #include <iostream>
 
+#include <time.h>
+
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+using namespace std;
+
 //Antal rundor som sker vid varje f där 5 grekiska funktioner exekveras per runda
 #define NROUNDS 24
 
@@ -584,15 +592,38 @@ int main(int argc, char const *argv[])
     size_t outlen = 32;
     uint8_t hash[outlen];
 
-    uint8_t input[] = {
-        'f', 'i', 's', 'h', 'e', 's'
-    };
 
-    size_t inputLength = sizeof(input)/sizeof(input[0]);
+
+    //uint8_t input[] = {
+    //    'f', 'i', 's', 'h', 'e', 's'
+    //};
+
+    //uint8_t input[] = "";
+
+    //uint8_t input[] = {
+    //    #include "lipsum.txt"
+    //};
+
+    ifstream file;
+    file.open("../lipsum.txt");
+    string str;
+    if(file) {
+        ostringstream stream;
+        stream << file.rdbuf();
+        str = stream.str();
+    }
+    //const uint8_t *input = reinterpret_cast<const uint8_t*>(str.c_str());
+
+    vector<uint8_t> vec(str.begin(), str.end());
+    uint8_t *input = &vec[0];
+
+    size_t inputLength = vec.size();
 
     //printf("%ld", inputLength);
 
+    clock_t time = clock();
     shake256(hash, outlen, input, inputLength);
+    printf("Time taken: %.2fs\n", (double)(clock() - time)/CLOCKS_PER_SEC);
 
     for(int i=0; i<32; i++) {
         printf("%02x", hash[i]);
