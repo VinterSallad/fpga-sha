@@ -97,6 +97,7 @@ int main(int argc, char const *argv[])
         stream << file.rdbuf();
         str = stream.str();
     }
+    file.close();
     vector<uint8_t> vec(str.begin(), str.end());
     uint8_t *input = &vec[0];
 
@@ -161,6 +162,7 @@ int main(int argc, char const *argv[])
         printf("%02x", hash[i]);
     }
 
+    cleanup();
 
     return 0;
 }
