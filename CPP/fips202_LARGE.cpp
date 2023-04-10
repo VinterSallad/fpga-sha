@@ -591,9 +591,9 @@ int main(int argc, char const *argv[])
 {
 
     ifstream file;
-    //file.open("../lipsum.txt");
-    file.open("../lipsumSmall.txt");
-    //file.open("../lipsumLarge.txt");
+    //file.open("../testMedium.txt");
+    file.open("../testSmall.txt");
+    //file.open("../testLarge.txt");
     string str;
     if(file) {
         ostringstream stream;
@@ -611,7 +611,7 @@ int main(int argc, char const *argv[])
     uint8_t hash[outlen];
 
     int i;
-    for(i = 0; i < 10; i++) {
+    for(i = 0; i < 1000; i++) {
         clock_t time = clock();
         shake256(hash, outlen, input, inputLength);
         printf("%.10f\n", (double)(clock() - time)/CLOCKS_PER_SEC);
